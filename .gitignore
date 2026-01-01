@@ -1,6 +1,7 @@
 node_modules/
 .env
-auth_whatsapp/
+auth_dirs/
+.whatsapp_auth/
 test.js
 test2.js
 index.html

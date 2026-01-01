@@ -1,5 +1,6 @@
 import log from 'npmlog';
+import BOT from '../../config/env.js';
 
-log.heading = 'Delvin';
+log.heading = BOT.ALIAS;
 
 export default log;

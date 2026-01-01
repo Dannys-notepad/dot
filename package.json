@@ -1,7 +1,7 @@
 {
-  "name": "delvin",
-  "version": "0.1.0",
-  "description": "Meet Delvin a smart chatbot across all platforms - Context-aware digital assistant for multi-platform automation, media processing, and intelligent group management",
+  "name": "dot",
+  "version": "1.0.0",
+  "description": "Meet dot a smart chatbot across all platforms - A digital assistant for multi-platform automation, media processing, and intelligent group management",
   "private": "true",
   "main": "main.js",
   "type": "module",
@@ -18,24 +18,26 @@
     "chatbot",
     "whatsapp",
     "whatsapp-messenger-bot",
-    "delvin"
+    "dog",
+    "ai"
   ],
   "author": {
     "name": "Etim Daniel Udeme",
     "email": "etimdnl41@gmail.com"
   },
   "license": "ISC",
-  "packageManager": "pnpm@10.10.0",
+  "packageManager": "pnpm@10.26.2",
   "dependencies": {
     "@cacheable/node-cache": "^1.7.3",
-    "@google/genai": "^1.21.0",
     "@whiskeysockets/baileys": "7.0.0-rc.4",
     "axios": "^1.12.2",
+    "chokidar": "^5.0.0",
     "dotenv": "^17.2.2",
+    "node-cache": "^5.1.2",
     "npmlog": "^7.0.1",
     "pino": "^10.0.0",
     "qrcode-terminal": "^0.12.0",
-    "ytdl-core": "^4.11.5"
+    "semver": "^7.7.3"
   },
   "devDependencies": {
     "eslint": "^9.37.0",
