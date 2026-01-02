@@ -1,78 +1,111 @@
+// commands/help-simple-dynamic.js
 import { createCommand } from '../components/cmd/base-command.js';
+import BOT from '../config/constants.js';
 
-const helpCommand = createCommand('help',
+const helpSimpleDynamicCommand = createCommand('help',
   async (message, args, userType, handler) => {
-    const [categoryOrCommand] = args;
+    const [query] = args;
     const isGroup = message.chatId.endsWith('@g.us');
     const chatType = isGroup ? 'group' : 'private';
     
-    // If asking for specific command
-    if (categoryOrCommand) {
-      const command = handler.get(categoryOrCommand);
-      if (!command) return `Command "${categoryOrCommand}" not found`;
-      
-      if (!command.permissions.includes(userType)) {
-        return `You don't have permission to use ${command.name}`;
-      }
-      
-      if (command.chatType !== 'both' && command.chatType !== chatType) {
-        const allowed = command.chatType === 'group' ? 'groups only' : 'private chats only';
-        return `⚠️ ${command.name} works in ${allowed}`;
-      }
-      
-      return `
-📚 **${command.name}**
-${command.description}
-
-📂 Category: ${command.category}
-👥 Works in: ${command.chatType === 'both' ? 'Groups & Private' : command.chatType === 'group' ? 'Groups only' : 'Private only'}
-🎯 Usage: ${command.example || `$${command.name}`}
-⚡ Cooldown: ${command.cooldown || 0}s
-🔤 Aliases: ${command.aliases.join(', ') || 'none'}
-👑 Required: ${command.permissions.join(', ')}
-      `.trim();
-    }
-    
-    // Show all commands by category
-    const commandsByCategory = await handler.listForUser(userType, chatType);
-    
-    if (Object.keys(commandsByCategory).length === 0) {
-      return 'No commands available for you in this chat type.';
-    }
-    
-    let response = `📚 **AVAILABLE COMMANDS**\n`;
-    response += `━━━━━━━━━━━━━━━━━━━━━━\n\n`;
-    response += `👤 You are: ${userType}\n`;
-    response += `💬 Chat: ${isGroup ? 'Group' : 'Private'}\n\n`;
-    
-    for (const [category, commandsList] of Object.entries(commandsByCategory)) {
-      response += `**${category.toUpperCase()}**\n`;
-      commandsList.forEach(cmd => {
-        response += `• $${cmd.name} - ${cmd.description}`;
-        if (cmd.example) response += `\n  📝 *Example:* ${cmd.example}`;
-        if (cmd.cooldown) response += ` ⏱️${cmd.cooldown}s`;
-        if (cmd.permissions && cmd.permissions.length === 1 && cmd.permissions[0] === 'super-user') {
-          response += ` 👑`;
+    // If query is provided
+    if (query) {
+      // Try to get command
+      const command = handler.get(query);
+      if (command) {
+        // Check permissions and chat type
+        if (!command.permissions.includes(userType)) {
+          return `🚫 You need ${command.permissions.join(' or ')} permissions`;
         }
-        response += '\n';
-      });
-      response += '\n';
+        if (command.chatType !== 'both' && command.chatType !== chatType) {
+          return `⚠️ This command works in ${command.chatType} only`;
+        }
+        
+        // Return command info
+        return formatCommandInfo(command);
+      }
+      
+      // If not a command, show available commands
+      return `Command "${query}" not found.\n\n` +
+             `Available commands:\n${await getAvailableCommandsList(handler, userType, chatType)}`;
     }
     
-    response += `━━━━━━━━━━━━━━━━━━━━━━\n`;
-    response += `ℹ️ Use \`$help [command]\` for detailed info\n`;
-    response += `🔑 👑 = Super-user only | ⏱️ = Cooldown`;
-    
-    return response;
+    // Show all available commands
+    return await getAllCommands(handler, userType, chatType);
   },
   { 
-    description: 'Show available commands',
-    aliases: ['h', 'commands', 'menu'],
+    description: 'Show help for commands',
+    aliases: ['h', 'commands'],
     category: 'general',
     chatType: 'both',
-    example: '$help | $help ping | $help administration',
+    example: '$help | $help ping',
     permissions: ['user', 'admin', 'super-user']
   }
 );
 
-export default helpCommand;
+// Helper: Format command info
+function formatCommandInfo(command) {
+  return `
+*${command.name.toUpperCase()}*
+${command.description}
+
+*Usage:* ${command.example || `${BOT.COMMAND_PREFIX}${command.name}`}
+*Category:* ${command.category}
+*Cooldown:* ${command.cooldown || 0}s
+*Aliases:* ${command.aliases.join(', ') || 'none'}
+*Permissions:* ${command.permissions.join(', ')}
+*Chat Type:* ${command.chatType}
+  `.trim();
+}
+
+// Helper: Get list of available commands
+async function getAvailableCommandsList(handler, userType, chatType) {
+  const commandsByCategory = await handler.listForUser(userType, chatType);
+  let list = '';
+  
+  for (const [category, commands] of Object.entries(commandsByCategory)) {
+    const commandNames = commands.map(c => `\`${BOT.COMMAND_PREFIX}${c.name}\``).join(', ');
+    list += `*${category}:* ${commandNames}\n`;
+  }
+  
+  return list;
+}
+
+// Helper: Get all commands formatted
+async function getAllCommands(handler, userType, chatType) {
+  const commandsByCategory = await handler.listForUser(userType, chatType);
+  
+  if (Object.keys(commandsByCategory).length === 0) {
+    return 'No commands available for you.';
+  }
+  
+  let response = `*${BOT.NAME} Commands*\n`;
+  response += `Prefix: ${BOT.COMMAND_PREFIX}\n\n`;
+  
+  let totalCommands = 0;
+  
+  for (const [category, commands] of Object.entries(commandsByCategory)) {
+    response += `*${category.toUpperCase()}*\n`;
+    
+    commands.forEach(cmd => {
+      response += `• ${BOT.COMMAND_PREFIX}${cmd.name} - ${cmd.description}`;
+      if (cmd.cooldown) response += ` ⏱️${cmd.cooldown}s`;
+      if (cmd.permissions.includes('super-user') && !cmd.permissions.includes('user')) {
+        response += ` 👑`;
+      }
+      response += '\n';
+    });
+    
+    response += '\n';
+    totalCommands += commands.length;
+  }
+  
+  response += `━━━━━━━━━━━━━━━━━━━━━━\n`;
+  response += `📊 Total: ${totalCommands} commands\n`;
+  response += `ℹ️ Use \`${BOT.COMMAND_PREFIX}help [command]\` for details\n`;
+  response += `🔑 👑 = Super-user only`;
+  
+  return response;
+}
+
+export default helpSimpleDynamicCommand;
